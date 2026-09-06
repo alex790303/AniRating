@@ -1,0 +1,44 @@
+name: 更新評分資料
+
+on:
+  schedule:
+    - cron: "0 19 * * *"        # 每天台灣時間清晨 3:00
+  workflow_dispatch:            # 也可以在網頁上手動按按鈕執行
+    inputs:
+      mode:
+        description: "更新範圍"
+        type: choice
+        default: recent
+        options: [recent, full]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 抓取並計算評分
+        env:
+          OMDB_API_KEY: ${{ secrets.OMDB_API_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "full" ]; then
+            node build.mjs
+          else
+            node build.mjs --recent
+          fi
+
+      - name: 存回資料
+        run: |
+          git config user.name "AniRating Bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data
+          git diff --staged --quiet || git commit -m "資料更新 $(date -u +%Y-%m-%d)"
+          git push
