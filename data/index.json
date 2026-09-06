@@ -1,0 +1,132 @@
+{
+  "updated": "2026-09-06T17:36:18.855Z",
+  "current": "2026-summer",
+  "seasons": [
+    {
+      "key": "2021-autumn",
+      "year": 2021,
+      "season": "autumn",
+      "count": 47
+    },
+    {
+      "key": "2021-spring",
+      "year": 2021,
+      "season": "spring",
+      "count": 56
+    },
+    {
+      "key": "2021-summer",
+      "year": 2021,
+      "season": "summer",
+      "count": 40
+    },
+    {
+      "key": "2021-winter",
+      "year": 2021,
+      "season": "winter",
+      "count": 59
+    },
+    {
+      "key": "2022-autumn",
+      "year": 2022,
+      "season": "autumn",
+      "count": 50
+    },
+    {
+      "key": "2022-spring",
+      "year": 2022,
+      "season": "spring",
+      "count": 51
+    },
+    {
+      "key": "2022-summer",
+      "year": 2022,
+      "season": "summer",
+      "count": 48
+    },
+    {
+      "key": "2022-winter",
+      "year": 2022,
+      "season": "winter",
+      "count": 44
+    },
+    {
+      "key": "2023-autumn",
+      "year": 2023,
+      "season": "autumn",
+      "count": 66
+    },
+    {
+      "key": "2023-spring",
+      "year": 2023,
+      "season": "spring",
+      "count": 58
+    },
+    {
+      "key": "2023-summer",
+      "year": 2023,
+      "season": "summer",
+      "count": 44
+    },
+    {
+      "key": "2023-winter",
+      "year": 2023,
+      "season": "winter",
+      "count": 57
+    },
+    {
+      "key": "2024-autumn",
+      "year": 2024,
+      "season": "autumn",
+      "count": 64
+    },
+    {
+      "key": "2024-spring",
+      "year": 2024,
+      "season": "spring",
+      "count": 60
+    },
+    {
+      "key": "2024-summer",
+      "year": 2024,
+      "season": "summer",
+      "count": 55
+    },
+    {
+      "key": "2024-winter",
+      "year": 2024,
+      "season": "winter",
+      "count": 53
+    },
+    {
+      "key": "2025-autumn",
+      "year": 2025,
+      "season": "autumn",
+      "count": 56
+    },
+    {
+      "key": "2025-spring",
+      "year": 2025,
+      "season": "spring",
+      "count": 62
+    },
+    {
+      "key": "2025-summer",
+      "year": 2025,
+      "season": "summer",
+      "count": 60
+    },
+    {
+      "key": "2025-winter",
+      "year": 2025,
+      "season": "winter",
+      "count": 50
+    },
+    {
+      "key": "2026-winter",
+      "year": 2026,
+      "season": "winter",
+      "count": 56
+    }
+  ]
+}
