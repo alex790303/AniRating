@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>漫評 AniRating — 動畫綜合評分</title>
+<meta name="description" content="匯集 AniList、MyAnimeList、Bangumi、Kitsu、IMDb 五大評分站的分數，換算成單一綜合評分。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://s4.anilist.co">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFF3; --card:#FFF; --ink:#171C26; --ink-2:#5C6675; --ink-3:#98A1B0;
+  --line:#D6DAE2; --line-2:#E6E9EF;
+  --winter:#6E8FB8; --spring:#C97B96; --summer:#3E9E8F; --autumn:#C1873F;
+  --live:#D2412F; --soon:#7C5BC7;
+  --sans:"Zen Kaku Gothic New","PingFang TC","Noto Sans TC",sans-serif;
+  --num:"Archivo","Zen Kaku Gothic New",sans-serif;
+  --gut:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;padding-bottom:70px}
+button{font-family:inherit}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
+
+header{border-bottom:1px solid var(--line);background:var(--card)}
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
+.brand{display:flex;align-items:baseline;gap:9px;min-width:0}
+.brand h1{font-size:22px;font-weight:900}
+.brand .mk{font-family:var(--num);font-weight:800;font-size:12px;letter-spacing:.16em;color:var(--ink-3);white-space:nowrap}
+.langs{display:flex;gap:2px;background:#E4E8EF;padding:3px;border-radius:999px;flex:none}
+.langs button{border:0;background:transparent;font-size:12.5px;font-weight:500;color:var(--ink-2);padding:5px 10px;border-radius:999px;cursor:pointer}
+.langs button[aria-pressed="true"]{background:var(--card);color:var(--ink);font-weight:700}
+.tagline{color:var(--ink-2);font-size:13.5px;padding-bottom:14px;max-width:60ch}
+
+.controls{position:sticky;top:0;z-index:20;background:rgba(237,239,243,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:11px 0 9px}
+.crow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card);flex:none}
+.seg button{border:0;border-right:1px solid var(--line);background:transparent;font-size:12.5px;font-weight:500;color:var(--ink-2);padding:7px 12px;cursor:pointer;white-space:nowrap}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:700}
+.spacer{flex:1}
+.search input{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 11px;font-family:var(--sans);font-size:13px;width:160px;color:var(--ink)}
+
+/* ── 季度條：固定寬度視窗 ── */
+.timeline{display:flex;align-items:center;gap:7px;padding:9px 0 3px}
+.tnav{flex:none;width:30px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:8px;
+  color:var(--ink-2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tnav:disabled{opacity:.32;cursor:default}
+.strip{display:flex;gap:7px;flex:1;overflow:hidden;justify-content:flex-start}
+.chip{flex:1 1 0;min-width:0;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:9px;
+  padding:6px 8px 7px;text-align:center;color:var(--ink);position:relative;height:44px}
+.chip .yr{font-family:var(--num);font-size:10.5px;font-weight:600;color:var(--ink-3);display:block;line-height:1.15}
+.chip .sn{font-size:13px;font-weight:700;display:block;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip .dot{display:block;height:3px;border-radius:99px;margin-top:4px;background:var(--line-2)}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.chip[data-s=winter] .sn{color:var(--winter)} .chip[data-s=spring] .sn{color:var(--spring)}
+.chip[data-s=summer] .sn{color:var(--summer)} .chip[data-s=autumn] .sn{color:var(--autumn)}
+.chip[data-s=winter][aria-pressed=true] .dot{background:var(--winter)}
+.chip[data-s=spring][aria-pressed=true] .dot{background:var(--spring)}
+.chip[data-s=summer][aria-pressed=true] .dot{background:var(--summer)}
+.chip[data-s=autumn][aria-pressed=true] .dot{background:var(--autumn)}
+.chip .pip{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:99px}
+.chip .pip.live{background:var(--live)} .chip .pip.soon{background:var(--soon)}
+.yrjump{flex:none;height:44px;border:1px solid var(--line);background:var(--card);border-radius:8px;
+  font-family:var(--num);font-size:12.5px;font-weight:600;color:var(--ink-2);padding:0 7px;cursor:pointer}
+
+.tags{display:flex;gap:6px;overflow-x:auto;padding:8px 2px 2px}
+.tags::-webkit-scrollbar,.flash-track::-webkit-scrollbar{height:5px}
+.tags::-webkit-scrollbar-thumb,.flash-track::-webkit-scrollbar-thumb{background:#C4CAD6;border-radius:99px}
+.tag{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.tag[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.tags.mood .tag{background:#F4F6FA;border-style:dashed}
+.tags.mood .tag[aria-pressed="true"]{background:var(--ink-2);border-color:var(--ink-2);border-style:solid;color:#fff}
+
+.state{margin:26px 0;padding:20px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+  text-align:center;color:var(--ink-2);font-size:13.5px;line-height:1.7}
+.state code{font-family:var(--num);background:#EEF1F6;padding:1px 5px;border-radius:4px;font-size:12.5px}
+
+.flash{margin-top:18px;border:1px solid #D9CFF0;background:linear-gradient(180deg,#F6F2FE,#FBFAFF);border-radius:12px;padding:13px 0 14px}
+.flash-head{display:flex;align-items:center;gap:9px;padding:0 14px 10px}
+.flash-head .lamp{width:8px;height:8px;border-radius:99px;background:var(--soon);flex:none}
+.flash-head h2{font-size:14px;font-weight:800;color:#4A3080}
+.flash-head .sub{font-size:11.5px;color:#7A6AA0;margin-left:auto;font-family:var(--num);font-weight:500}
+.flash-track{display:flex;gap:11px;overflow-x:auto;padding:0 14px 4px;scroll-snap-type:x proximity}
+.fcard{scroll-snap-align:start;flex:none;width:212px;background:var(--card);border:1px solid #E3DAF5;border-radius:10px;padding:10px;text-align:left;cursor:pointer;color:var(--ink)}
+.fcard .top{display:flex;gap:10px}
+.fcard .cv{width:48px;flex:none;border-radius:6px;overflow:hidden;aspect-ratio:2/3;background:#DDD}
+.fcard .cv img{width:100%;height:100%;object-fit:cover}
+.fcard h3{font-size:13px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fcard .when{font-family:var(--num);font-size:11px;color:var(--soon);font-weight:700;margin-top:3px}
+.fcard .heat{margin-top:9px;display:flex;align-items:center;gap:6px}
+.fcard .heat .bar{flex:1;height:5px;background:#EDE8F8;border-radius:99px;overflow:hidden}
+.fcard .heat .bar i{display:block;height:100%;background:var(--soon);border-radius:99px}
+.fcard .heat .v{font-family:var(--num);font-size:11px;font-weight:700;color:var(--soon)}
+
+.boardhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:18px 0 12px;padding-bottom:9px;border-bottom:2px solid var(--ink)}
+.boardhead .t{font-size:21px;font-weight:900;line-height:1.2}
+.boardhead .c{font-family:var(--num);font-size:12.5px;color:var(--ink-2);font-weight:500;white-space:nowrap;text-align:right}
+
+.cover{position:relative;aspect-ratio:2/3;border-radius:8px;overflow:hidden;background:#C8CEDA;flex:none}
+.cover img{width:100%;height:100%;object-fit:cover}
+.cover .st{position:absolute;top:6px;left:6px;font-size:10.5px;font-weight:700;color:#fff;padding:2px 6px;border-radius:5px}
+.st.live{background:var(--live)} .st.soon{background:var(--soon)}
+
+.row{display:grid;grid-template-columns:32px 54px 1fr auto;gap:13px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:8px}
+.row.airing{border-left:3px solid var(--live)}
+.rank{font-family:var(--num);font-weight:800;font-size:19px;color:var(--ink-3);text-align:right;padding-top:2px;font-variant-numeric:tabular-nums}
+.row:nth-child(-n+3) .rank{color:var(--ink);font-size:22px}
+.titles{min-width:0}
+.t-main{font-size:15.5px;font-weight:700;line-height:1.35}
+.t-sub{font-size:12px;color:var(--ink-2);margin-top:2px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{margin-top:6px;font-size:11.5px;color:var(--ink-2);font-family:var(--num);font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:10.5px;font-weight:700;padding:1.5px 6px;border-radius:4px;color:#fff;font-family:var(--sans)}
+.badge.winter{background:var(--winter)}.badge.spring{background:var(--spring)}
+.badge.summer{background:var(--summer)}.badge.autumn{background:var(--autumn)}
+.badge.split{background:#4B5563}.badge.live{background:var(--live)}.badge.soon{background:var(--soon)}
+.prog{display:flex;align-items:center;gap:6px;margin-top:6px}
+.prog .bar{width:74px;height:5px;background:#E7EAF0;border-radius:99px;overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--live);border-radius:99px}
+.prog .n{font-family:var(--num);font-size:11px;color:var(--live);font-weight:700}
+.tagline-s{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap}
+.mini{font-size:11px;color:var(--ink-2);background:#EEF1F6;border-radius:4px;padding:1.5px 6px}
+.mini.mood{background:transparent;border:1px dashed var(--line);color:var(--ink-3)}
+.scorebox{text-align:right;flex:none}
+.score{font-family:var(--num);font-weight:800;font-size:27px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.score.prov{color:var(--live)}
+.score.none{font-size:15px;color:var(--ink-3);font-weight:600;font-family:var(--sans)}
+.votes{font-family:var(--num);font-size:11px;color:var(--ink-2);margin-top:3px;font-weight:500}
+.toggle{margin-top:6px;border:0;background:transparent;padding:0;cursor:pointer;font-size:11.5px;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}
+.detail{grid-column:1/-1;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-2);display:none}
+.row.open .detail{display:block}
+.syn{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:11px}
+.src{display:grid;grid-template-columns:78px 1fr 40px 62px;gap:9px;align-items:center;margin-bottom:6px}
+.src .n{font-size:12px;font-weight:700}
+.src .bar{height:6px;background:#E7EAF0;border-radius:99px;overflow:hidden}
+.src .bar i{display:block;height:100%;border-radius:99px;background:var(--ink)}
+.src .v{font-family:var(--num);font-size:12.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.src .w{font-family:var(--num);font-size:11px;color:var(--ink-3);text-align:right}
+.src.na .n,.src.na .v{color:var(--ink-3)} .src.na .v{font-weight:500}
+.formula{margin-top:9px;font-size:11.5px;color:var(--ink-2);line-height:1.5}
+.links{margin-top:9px;display:flex;gap:9px;flex-wrap:wrap}
+.links a{font-size:11.5px;color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+.cell{background:transparent;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+.cell .cw{position:relative}
+.cell .sc{position:absolute;right:6px;bottom:6px;font-family:var(--num);font-weight:800;font-size:15px;color:#fff;background:rgba(15,20,30,.78);padding:3px 7px;border-radius:6px;font-variant-numeric:tabular-nums;backdrop-filter:blur(4px)}
+.cell .sc.prov{background:rgba(210,65,47,.88)}
+.cell .sc.soon{background:rgba(124,91,199,.9);font-size:11.5px;font-family:var(--sans);font-weight:700}
+.cell .pg{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(0,0,0,.28)}
+.cell .pg i{display:block;height:100%;background:var(--live)}
+.cell h3{font-size:13px;font-weight:700;margin-top:7px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cell .cm{font-size:11px;color:var(--ink-2);margin-top:2px;font-family:var(--num)}
+
+.seasonblock{margin-bottom:26px}
+.sbhead{display:flex;align-items:center;gap:9px;margin:0 0 11px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+.sbhead .sq{width:9px;height:9px;border-radius:2px;flex:none}
+.sbhead h3{font-size:15px;font-weight:800}
+.sbhead .n{font-family:var(--num);font-size:12px;color:var(--ink-2);margin-left:auto}
+footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-2);line-height:1.65}
+.updated{font-family:var(--num);font-size:11.5px;color:var(--ink-3);margin-top:6px}
+
+@media (min-width:600px){ .grid{grid-template-columns:repeat(3,1fr);gap:15px} .fcard{width:236px} }
+@media (min-width:860px){
+  :root{--gut:26px}
+  .grid{grid-template-columns:repeat(5,1fr)}
+  .row{grid-template-columns:38px 64px 1fr auto;gap:16px;padding:14px 16px}
+  .t-main{font-size:17px} .score{font-size:30px} .brand h1{font-size:25px}
+  .search input{width:200px}
+}
+@media (min-width:1120px){ .grid{grid-template-columns:repeat(6,1fr)} }
+@media (max-width:420px){
+  .row{grid-template-columns:24px 46px 1fr;gap:10px;padding:11px}
+  .scorebox{grid-column:3;text-align:left;display:flex;align-items:baseline;gap:9px;margin-top:7px;flex-wrap:wrap}
+  .score{font-size:22px} .votes{margin-top:0} .toggle{margin-top:0}
+  .src{grid-template-columns:64px 1fr 36px 50px}
+  .chip .sn{font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="hbar">
+      <div class="brand"><h1 id="ui-title">漫評</h1><span class="mk">ANIRATING</span></div>
+      <div class="langs" role="group" aria-label="Language">
+        <button data-lang="zh" aria-pressed="true">中文</button>
+        <button data-lang="en" aria-pressed="false">EN</button>
+        <button data-lang="ja" aria-pressed="false">日本語</button>
+      </div>
+    </div>
+    <p class="tagline" id="ui-tagline"></p>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap">
+    <div class="crow">
+      <div class="seg" id="grain" role="group"></div>
+      <div class="seg" id="view" role="group"></div>
+      <div class="seg" id="status" role="group"></div>
+      <div class="spacer"></div>
+      <div class="search"><input id="q" type="search" autocomplete="off"></div>
+    </div>
+    <div class="timeline">
+      <button class="tnav" id="tprev">‹</button>
+      <div class="strip" id="strip"></div>
+      <button class="tnav" id="tnext">›</button>
+      <select class="yrjump" id="yrjump"></select>
+    </div>
+    <div class="tags" id="tags"></div>
+    <div class="tags mood" id="moods"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="flash"></section>
+  <div class="boardhead">
+    <div class="t" id="boardTitle">—</div>
+    <div class="c" id="boardCount"></div>
+  </div>
+  <main id="board"><p class="state" id="ui-loading">載入中…</p></main>
+  <footer id="ui-footer"></footer>
+  <p class="updated" id="ui-updated"></p>
+</div>
+
+<script>
+/* ═══════════ 介面文字 ═══════════ */
+const T={
+ zh:{title:"漫評",tagline:"匯集五大評分站的分數，換算成單一綜合評分。不做主觀評論，只呈現全世界觀眾怎麼投票。",
+  g:{season:"季",half:"半年",year:"年",all:"歷史"},v:{list:"排行榜",grid:"大表"},
+  st:{all:"全部",airing:"播出中",upcoming:"未播出",finished:"已完結"},
+  seasons:{winter:"冬季",spring:"春季",summer:"夏季",autumn:"秋季"},
+  sShort:{winter:"冬",spring:"春",summer:"夏",autumn:"秋"},
+  halves:{h1:"上半年",h2:"下半年"},all:"歷史總榜",
+  count:n=>`${n} 部作品`,ep:n=>n?`${n} 集`:"集數未定",votes:n=>`${fmt(n)} 人評分`,
+  detail:"詳細資料",hide:"收合",na:"無對應資料",split:"系列作",search:"搜尋作品…",
+  allTags:"全部",live:"播出中",soon:"未播出",prov:"暫定分",noscore:"尚無評分",
+  epNow:(a,b)=>`第 ${a} / ${b||"?"} 話`,heat:"期待度",
+  flashTitle:"開播快報",flashSub:"依全球期待度排序",
+  loading:"載入中…",
+  empty:"這個範圍內沒有符合條件的作品。試著取消一個標籤。",
+  nodata:"還沒有資料。請到 GitHub 的 Actions 執行一次「更新評分資料」，選擇 <code>full</code> 模式。跑完後這裡就會出現內容。",
+  formula:"綜合分＝各站分數經分布正規化後，依評分人數做貝氏加權平均（樣本少的作品會被拉向中位數）。播出中作品的分數會隨集數增加而變動。",
+  footer:"資料來源：AniList、MyAnimeList、Kitsu、Bangumi 番組計畫、IMDb。每日更新一次，本站不自行評分。封面圖版權屬各原作與製作委員會。",
+  updatedAt:t=>`資料更新於 ${t}`,
+  tags:{action:"熱血戰鬥",isekai:"異世界",romance:"戀愛",slice:"日常療癒",mystery:"懸疑推理",
+   fantasy:"奇幻冒險",scifi:"科幻機甲",sports:"運動競技",comedy:"搞笑",music:"音樂",
+   drama:"寫實劇情",horror:"驚悚",school:"校園青春",food:"美食"},
+  moods:{rush:"爽快",tear:"催淚",brain:"燒腦",heal:"治癒",dark:"黑暗",tense:"緊張",art:"作畫神",chill:"下飯"}},
+ en:{title:"AniRating",tagline:"Five rating sites, one number. No editorial scores — just how the world actually voted.",
+  g:{season:"Season",half:"Half-year",year:"Year",all:"All time"},v:{list:"Ranking",grid:"Grid"},
+  st:{all:"All",airing:"Airing",upcoming:"Upcoming",finished:"Finished"},
+  seasons:{winter:"Winter",spring:"Spring",summer:"Summer",autumn:"Fall"},
+  sShort:{winter:"Winter",spring:"Spring",summer:"Summer",autumn:"Fall"},
+  halves:{h1:"First half",h2:"Second half"},all:"All-time board",
+  count:n=>`${n} titles`,ep:n=>n?`${n} eps`:"TBA",votes:n=>`${fmt(n)} votes`,
+  detail:"Details",hide:"Hide",na:"no match",split:"Series",search:"Search titles…",
+  allTags:"All",live:"Airing",soon:"Upcoming",prov:"provisional",noscore:"Not rated yet",
+  epNow:(a,b)=>`Ep ${a} of ${b||"?"}`,heat:"Anticipation",
+  flashTitle:"Premiere watch",flashSub:"ranked by global anticipation",
+  loading:"Loading…",
+  empty:"Nothing matches here. Try clearing a tag.",
+  nodata:"No data yet. Run the “更新評分資料” workflow on GitHub Actions in <code>full</code> mode, and this page will fill in.",
+  formula:"The combined score normalizes each site's distribution, then takes a Bayesian weighted mean by vote count. Airing titles shift week to week.",
+  footer:"Sources: AniList, MyAnimeList, Kitsu, Bangumi, IMDb. Updated daily. AniRating publishes no scores of its own. Cover art belongs to its respective rights holders.",
+  updatedAt:t=>`Data updated ${t}`,
+  tags:{action:"Action",isekai:"Isekai",romance:"Romance",slice:"Slice of life",mystery:"Mystery",
+   fantasy:"Fantasy",scifi:"Sci-fi & mecha",sports:"Sports",comedy:"Comedy",music:"Music",
+   drama:"Drama",horror:"Horror",school:"School life",food:"Food"},
+  moods:{rush:"Cathartic",tear:"Tearjerker",brain:"Cerebral",heal:"Comforting",dark:"Bleak",tense:"Tense",art:"Gorgeous",chill:"Easy watch"}},
+ ja:{title:"アニ評",tagline:"五つの評価サイトの点数を一つの総合スコアに。独自採点はせず、世界中の投票結果だけを示します。",
+  g:{season:"クール",half:"半年",year:"年",all:"通算"},v:{list:"ランキング",grid:"一覧表"},
+  st:{all:"すべて",airing:"放送中",upcoming:"放送前",finished:"放送終了"},
+  seasons:{winter:"冬",spring:"春",summer:"夏",autumn:"秋"},
+  sShort:{winter:"冬",spring:"春",summer:"夏",autumn:"秋"},
+  halves:{h1:"上半期",h2:"下半期"},all:"通算ランキング",
+  count:n=>`${n}作品`,ep:n=>n?`全${n}話`:"話数未定",votes:n=>`${fmt(n)}件`,
+  detail:"詳細",hide:"閉じる",na:"該当なし",split:"シリーズ",search:"作品を検索…",
+  allTags:"すべて",live:"放送中",soon:"放送前",prov:"暫定",noscore:"評価前",
+  epNow:(a,b)=>`第${a}話 / 全${b||"?"}話`,heat:"期待度",
+  flashTitle:"放送前速報",flashSub:"世界の期待度順",
+  loading:"読み込み中…",
+  empty:"該当する作品がありません。タグを外してみてください。",
+  nodata:"データがまだありません。GitHub Actions で「更新評分資料」を <code>full</code> モードで実行してください。",
+  formula:"総合スコアは各サイトの分布を正規化し、評価件数によるベイズ加重平均を取っています。放送中の作品は週ごとに変動します。",
+  footer:"出典：AniList、MyAnimeList、Kitsu、Bangumi、IMDb。毎日更新。当サイトは独自の採点を行いません。カバー画像の権利は各権利者に帰属します。",
+  updatedAt:t=>`データ更新：${t}`,
+  tags:{action:"バトル",isekai:"異世界",romance:"恋愛",slice:"日常",mystery:"ミステリー",
+   fantasy:"ファンタジー",scifi:"SF・ロボット",sports:"スポーツ",comedy:"コメディ",music:"音楽",
+   drama:"ドラマ",horror:"ホラー",school:"学園",food:"グルメ"},
+  moods:{rush:"爽快",tear:"泣ける",brain:"頭を使う",heal:"癒し",dark:"重い",tense:"緊迫",art:"作画神",chill:"ながら見"}}
+};
+const fmt=n=>!n?"0":n>=1000?(n/1000).toFixed(n>=10000?0:1)+"k":String(n);
+const TAGKEYS=["action","isekai","romance","slice","mystery","fantasy","scifi","sports","comedy","music","drama","horror","school","food"];
+const MOODKEYS=["rush","tear","brain","heal","dark","tense","art","chill"];
+const SEASON_ORDER=["winter","spring","summer","autumn"];
+const SEASON_HEX={winter:"#6E8FB8",spring:"#C97B96",summer:"#3E9E8F",autumn:"#C1873F"};
+const SITES=["MyAnimeList","AniList","Bangumi","Kitsu","IMDb"];
+const WINDOW=5;   // 季度條一次顯示幾格
+
+/* ═══════════ 狀態 ═══════════ */
+let lang=localStorage_get("lang")||"zh";
+let grain="season",view="grid",statusF="all",pick=null,winStart=0;
+let activeTags=new Set(),activeMoods=new Set(),query="";
+let INDEX=null;                 // data/index.json
+const CACHE=new Map();          // key → items[]
+
+function localStorage_get(k){try{return localStorage.getItem("anirating."+k)}catch{return null}}
+function localStorage_set(k,v){try{localStorage.setItem("anirating."+k,v)}catch{}}
+
+/* ═══════════ 資料載入 ═══════════ */
+async function loadIndex(){
+  const r=await fetch("data/index.json",{cache:"no-cache"});
+  if(!r.ok)throw new Error("no index");
+  return r.json();
+}
+async function loadSeason(key){
+  if(CACHE.has(key))return CACHE.get(key);
+  try{
+    const r=await fetch(`data/seasons/${key}.json`,{cache:"no-cache"});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    CACHE.set(key,j.items||[]);
+    return CACHE.get(key);
+  }catch{CACHE.set(key,[]);return []}
+}
+const keysForScope=id=>{
+  const all=INDEX.seasons.map(s=>s.key);
+  if(id==="all")return all;
+  if(/^\d{4}$/.test(id))return all.filter(k=>k.startsWith(id));
+  if(/h1$/.test(id)){const y=id.slice(0,4);return all.filter(k=>k===`${y}-winter`||k===`${y}-spring`)}
+  if(/h2$/.test(id)){const y=id.slice(0,4);return all.filter(k=>k===`${y}-summer`||k===`${y}-autumn`)}
+  return all.filter(k=>k===id);
+};
+async function itemsFor(id){
+  const lists=await Promise.all(keysForScope(id).map(loadSeason));
+  return lists.flat();
+}
+
+/* ═══════════ 篩選與標籤 ═══════════ */
+const filtered=list=>list.filter(it=>{
+  if(statusF!=="all"&&it.status!==statusF)return false;
+  if(activeTags.size&&![...activeTags].every(t=>(it.tags||[]).includes(t)))return false;
+  if(activeMoods.size&&![...activeMoods].some(m=>(it.moods||[]).includes(m)))return false;
+  if(query){const q=query.toLowerCase();
+    const hay=[it.title?.zh,it.title?.en,it.title?.ja,it.studio].filter(Boolean).join(" ").toLowerCase();
+    if(!hay.includes(q))return false}
+  return true;
+});
+const title=it=>it.title?.[lang]||it.title?.en||it.title?.ja||"—";
+const label=id=>{const L=T[lang];
+  if(id==="all")return L.all;
+  if(/^\d{4}$/.test(id))return id;
+  const y=id.slice(0,4),r=id.slice(5);
+  if(r==="h1"||r==="h2")return`${y} ${L.halves[r]}`;
+  return lang==="en"?`${L.seasons[r]} ${y}`:`${y} ${L.seasons[r]}`;
+};
+
+/* ═══════════ 季度條（固定視窗）═══════════ */
+function scopeKeys(){
+  const years=[...new Set(INDEX.seasons.map(s=>s.year))].sort();
+  if(grain==="season")return INDEX.seasons.map(s=>s.key);
+  if(grain==="half")return years.flatMap(y=>[`${y}-h1`,`${y}-h2`]);
+  if(grain==="year")return years.map(String);
+  return["all"];
+}
+function centerWindow(){
+  const keys=scopeKeys(),i=keys.indexOf(pick);
+  winStart=Math.max(0,Math.min(keys.length-WINDOW,i-Math.floor(WINDOW/2)));
+}
+function drawStrip(){
+  const keys=scopeKeys(),L=T[lang];
+  const el=document.getElementById("strip");el.innerHTML="";
+  const shown=keys.slice(winStart,winStart+WINDOW);
+  shown.forEach(id=>{
+    const b=document.createElement("button");b.className="chip";b.setAttribute("aria-pressed",id===pick);
+    const m=/(winter|spring|summer|autumn)$/.exec(id);if(m)b.dataset.s=m[1];
+    let yr="",sn="";
+    if(id==="all")sn=L.all;
+    else if(/^\d{4}$/.test(id))sn=id;
+    else{yr=id.slice(0,4);sn=/h[12]$/.test(id)?L.halves[id.slice(5)]:L.sShort[id.slice(5)]}
+    const meta=INDEX.seasons.find(s=>s.key===id);
+    const pip=meta&&meta.key===INDEX.current?'<span class="pip live"></span>'
+      :meta&&meta.key>INDEX.current?'<span class="pip soon"></span>':"";
+    b.innerHTML=`${pip}<span class="yr">${yr}</span><span class="sn">${sn}</span><span class="dot"></span>`;
+    b.onclick=()=>{pick=id;render()};
+    el.appendChild(b);
+  });
+  document.getElementById("tprev").disabled=winStart<=0;
+  document.getElementById("tnext").disabled=winStart+WINDOW>=keys.length;
+  // 年份跳轉
+  const sel=document.getElementById("yrjump");
+  const years=[...new Set(INDEX.seasons.map(s=>s.year))].sort((a,b)=>b-a);
+  sel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join("");
+  sel.value=(pick&&/^\d{4}/.test(pick))?pick.slice(0,4):years[0];
+  sel.style.display=grain==="all"?"none":"";
+  document.getElementById("tprev").style.display=grain==="all"?"none":"";
+  document.getElementById("tnext").style.display=grain==="all"?"none":"";
+}
+document.getElementById("tprev").onclick=()=>{winStart=Math.max(0,winStart-WINDOW);drawStrip()};
+document.getElementById("tnext").onclick=()=>{
+  winStart=Math.min(scopeKeys().length-WINDOW,winStart+WINDOW);drawStrip()};
+document.getElementById("yrjump").onchange=e=>{
+  const y=e.target.value,keys=scopeKeys();
+  const target=keys.find(k=>k.startsWith(y));
+  if(target){pick=target;centerWindow();render()}
+};
+
+/* ═══════════ 標籤 ═══════════ */
+function drawTagRow(elId,keys,dict,set){
+  const el=document.getElementById(elId);el.innerHTML="";const L=T[lang];
+  if(elId==="tags"){
+    const all=document.createElement("button");all.className="tag";all.textContent=L.allTags;
+    all.setAttribute("aria-pressed",set.size===0);
+    all.onclick=()=>{set.clear();drawTags();render()};el.appendChild(all);
+  }
+  keys.forEach(k=>{
+    const b=document.createElement("button");b.className="tag";b.textContent=L[dict][k];
+    b.setAttribute("aria-pressed",set.has(k));
+    b.onclick=()=>{set.has(k)?set.delete(k):set.add(k);drawTags();render()};
+    el.appendChild(b);
+  });
+}
+const drawTags=()=>{drawTagRow("tags",TAGKEYS,"tags",activeTags);drawTagRow("moods",MOODKEYS,"moods",activeMoods)};
+
+/* ═══════════ 卡片 ═══════════ */
+const coverHTML=(it,showStatus)=>{const L=T[lang];
+  const st=showStatus&&it.status!=="finished"
+    ?`<span class="st ${it.status==="airing"?"live":"soon"}">${it.status==="airing"?L.live:L.soon}</span>`:"";
+  const bg=it.coverColor||"#C8CEDA";
+  return`<div class="cover" style="background:${bg}">${st}
+    ${it.cover?`<img loading="lazy" src="${it.cover}" alt="">`:""}</div>`};
+const startText=it=>{
+  const d=it.startDate;
+  return d&&d.month?`${d.month}/${d.day||1}`:"";
+};
+function scoreBlock(it){
+  const L=T[lang];
+  if(it.status==="upcoming"||it.score==null)
+    return`<div class="score none">${L.noscore}</div>
+      <div class="votes">${it.heat!=null?L.heat+" "+it.heat:""}</div>`;
+  return`<div class="score${it.status==="airing"?" prov":""}">${it.score.toFixed(2)}</div>
+    <div class="votes">${L.votes(it.votes)}${it.status==="airing"?"・"+L.prov:""}</div>`;
+}
+function rowHTML(it,i){
+  const L=T[lang];
+  const others=["zh","en","ja"].filter(k=>k!==lang).map(k=>it.title?.[k]).filter(Boolean).join(" ／ ");
+  const stB=it.status==="airing"?`<span class="badge live">${L.live}</span>`
+    :it.status==="upcoming"?`<span class="badge soon">${L.soon} ${startText(it)}</span>`:"";
+  const srcRows=SITES.map(s=>{
+    const d=it.sources?.[s];
+    return`<div class="src ${d?"":"na"}"><div class="n">${s}</div>
+      <div class="bar"><i style="width:${d?(d.raw/10*100).toFixed(0):0}%"></i></div>
+      <div class="v">${d?d.raw.toFixed(1):"—"}</div>
+      <div class="w">${d?Math.round(d.weight*100)+"%":L.na}</div></div>`}).join("");
+  return`<div class="rank">${it.status==="upcoming"?"—":i+1}</div>
+  ${coverHTML(it,true)}
+  <div class="titles">
+    <div class="t-main">${title(it)}</div>
+    <div class="t-sub">${others}</div>
+    <div class="meta">${stB}<span class="badge ${it.season}">${L.sShort[it.season]} ${it.year}</span>
+      ${it.split?`<span class="badge split">${L.split}</span>`:""}<span>${L.ep(it.episodes)}</span>
+      ${it.studio?`<span>${it.studio}</span>`:""}</div>
+    ${it.status==="airing"&&it.airedEpisodes?`<div class="prog">
+      <span class="bar"><i style="width:${Math.min(100,it.airedEpisodes/(it.episodes||12)*100)}%"></i></span>
+      <span class="n">${L.epNow(it.airedEpisodes,it.episodes)}</span></div>`:""}
+    <div class="tagline-s">${(it.tags||[]).map(t=>`<span class="mini">${L.tags[t]}</span>`).join("")}
+      ${(it.moods||[]).map(m=>`<span class="mini mood">${L.moods[m]}</span>`).join("")}</div>
+  </div>
+  <div class="scorebox">${scoreBlock(it)}<button class="toggle">${L.detail}</button></div>
+  <div class="detail">
+    ${it.synopsis?`<p class="syn">${it.synopsis}</p>`:""}
+    ${it.score!=null?srcRows+`<p class="formula">${L.formula}</p>`:""}
+    <div class="links">${Object.entries(it.links||{}).slice(0,5)
+      .map(([k,v])=>`<a href="${v}" target="_blank" rel="noopener">${k}</a>`).join("")}</div>
+  </div>`;
+}
+function cellHTML(it){
+  const L=T[lang];
+  const sc=it.status==="upcoming"||it.score==null
+    ?`<span class="sc soon">${startText(it)||L.soon}</span>`
+    :`<span class="sc${it.status==="airing"?" prov":""}">${it.score.toFixed(1)}</span>`;
+  const pg=it.status==="airing"&&it.airedEpisodes
+    ?`<span class="pg"><i style="width:${Math.min(100,it.airedEpisodes/(it.episodes||12)*100)}%"></i></span>`:"";
+  const cm=it.status==="upcoming"?(it.heat!=null?`${L.heat} ${it.heat}`:"")
+    :it.status==="airing"&&it.airedEpisodes?L.epNow(it.airedEpisodes,it.episodes)
+    :L.votes(it.votes);
+  return`<div class="cw">${coverHTML(it,true)}${sc}${pg}</div>
+    <h3>${title(it)}</h3><div class="cm">${cm}</div>`;
+}
+
+/* ═══════════ 主繪製 ═══════════ */
+async function render(){
+  const L=T[lang];
+  drawStrip();
+  const board=document.getElementById("board");
+  document.getElementById("boardTitle").textContent=label(pick);
+  board.innerHTML=`<p class="state">${L.loading}</p>`;
+
+  const raw=await itemsFor(pick),list=filtered(raw);
+  const rated=list.filter(x=>x.score!=null).sort((a,b)=>b.score-a.score);
+  const soon=list.filter(x=>x.score==null).sort((a,b)=>(b.heat||0)-(a.heat||0));
+  document.getElementById("boardCount").textContent=L.count(list.length);
+
+  // 快報
+  const fl=document.getElementById("flash");
+  const up=soon.filter(x=>x.status==="upcoming").slice(0,10);
+  fl.innerHTML=up.length?`<div class="flash">
+    <div class="flash-head"><span class="lamp"></span><h2>${L.flashTitle}</h2><span class="sub">${L.flashSub}</span></div>
+    <div class="flash-track">${up.map(it=>`<article class="fcard">
+      <div class="top"><div class="cv">${it.cover?`<img loading="lazy" src="${it.cover}" alt="">`:""}</div>
+        <div><h3>${title(it)}</h3><div class="when">${startText(it)}</div></div></div>
+      <div class="heat"><span class="bar"><i style="width:${it.heat||0}%"></i></span>
+        <span class="v">${it.heat||0}</span></div></article>`).join("")}</div></div>`:"";
+
+  board.innerHTML="";
+  if(!list.length){board.innerHTML=`<p class="state">${raw.length?L.empty:L.nodata}</p>`;return}
+
+  if(view==="list"){
+    [...rated.slice(0,grain==="season"?24:40),...soon].forEach((it,i)=>{
+      const row=document.createElement("article");
+      row.className="row"+(it.status==="airing"?" airing":"");
+      row.innerHTML=rowHTML(it,i);
+      row.querySelector(".toggle").onclick=e=>{row.classList.toggle("open");
+        e.target.textContent=row.classList.contains("open")?L.hide:L.detail};
+      board.appendChild(row);
+    });
+    return;
+  }
+  const ordered=[...rated,...soon],groups=[];
+  if(grain==="season")groups.push({key:pick,items:ordered});
+  else{const seen={};ordered.forEach(it=>{const k=`${it.year}-${it.season}`;(seen[k]=seen[k]||[]).push(it)});
+    Object.keys(seen).sort().forEach(k=>groups.push({key:k,items:seen[k]}))}
+  groups.forEach(g=>{
+    const sec=document.createElement("section");sec.className="seasonblock";
+    const s=g.key.slice(5);
+    sec.innerHTML=`<div class="sbhead"><span class="sq" style="background:${SEASON_HEX[s]||"#171C26"}"></span>
+      <h3>${label(g.key)}</h3><span class="n">${L.count(g.items.length)}</span></div><div class="grid"></div>`;
+    const grid=sec.querySelector(".grid");
+    g.items.forEach(it=>{const c=document.createElement("button");c.className="cell";c.innerHTML=cellHTML(it);grid.appendChild(c)});
+    board.appendChild(sec);
+  });
+}
+function drawChrome(){
+  const L=T[lang];
+  document.getElementById("ui-title").textContent=L.title;
+  document.getElementById("ui-tagline").textContent=L.tagline;
+  document.getElementById("ui-footer").textContent=L.footer;
+  document.getElementById("q").placeholder=L.search;
+  if(INDEX?.updated)document.getElementById("ui-updated").textContent=
+    L.updatedAt(new Date(INDEX.updated).toLocaleString(lang==="zh"?"zh-TW":lang==="ja"?"ja-JP":"en-US"));
+  const build=(id,keys,dict,cur,fn)=>{
+    const el=document.getElementById(id);el.innerHTML="";
+    keys.forEach(k=>{const b=document.createElement("button");b.textContent=L[dict][k];
+      b.setAttribute("aria-pressed",k===cur);b.onclick=()=>fn(k);el.appendChild(b)})};
+  build("grain",["season","half","year","all"],"g",grain,g=>{
+    grain=g;
+    const keys=scopeKeys();
+    pick=g==="season"?(INDEX.current&&keys.includes(INDEX.current)?INDEX.current:keys[keys.length-1])
+      :g==="all"?"all":keys[keys.length-1];
+    centerWindow();drawChrome();render()});
+  build("view",["list","grid"],"v",view,v=>{view=v;drawChrome();render()});
+  build("status",["all","airing","upcoming","finished"],"st",statusF,s=>{statusF=s;drawChrome();render()});
+  document.documentElement.lang=lang==="zh"?"zh-Hant":lang;
+  document.querySelectorAll(".langs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===lang));
+}
+document.querySelectorAll(".langs button").forEach(b=>{
+  b.onclick=()=>{lang=b.dataset.lang;localStorage_set("lang",lang);drawChrome();drawTags();render()}});
+let qTimer;
+document.getElementById("q").addEventListener("input",e=>{
+  clearTimeout(qTimer);qTimer=setTimeout(()=>{query=e.target.value.trim();render()},250)});
+
+/* ═══════════ 啟動 ═══════════ */
+(async()=>{
+  try{
+    INDEX=await loadIndex();
+    if(!INDEX.seasons?.length)throw new Error("empty");
+    const keys=INDEX.seasons.map(s=>s.key);
+    pick=keys.includes(INDEX.current)?INDEX.current:keys[keys.length-1];
+    centerWindow();drawChrome();drawTags();render();
+  }catch(e){
+    drawChrome();
+    document.getElementById("board").innerHTML=`<p class="state">${T[lang].nodata}</p>`;
+    document.getElementById("boardTitle").textContent="—";
+  }
+})();
+</script>
+</body>
+</html>
