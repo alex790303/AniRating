@@ -1,6 +1,6 @@
 {
-  "updated": "2026-09-30T22:50:51.980Z",
-  "current": "2026-summer",
+  "updated": "2026-10-01T23:01:38.351Z",
+  "current": "2026-autumn",
   "seasons": [
     {
       "key": "2021-autumn",
@@ -145,6 +145,12 @@
       "year": 2026,
       "season": "winter",
       "count": 56
+    },
+    {
+      "key": "2027-winter",
+      "year": 2027,
+      "season": "winter",
+      "count": 48
     }
   ]
 }
